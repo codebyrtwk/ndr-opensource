@@ -1,0 +1,123 @@
+version: '3.8'
+services:
+  # Analyzer Service
+  analyzer:
+    build: ./analyzer
+    container_name: analyzer_service
+    depends_on:
+      - engine
+    ports:
+      - "5001:5001"
+    networks:
+      - app-network
+    environment:
+      - KAFKA_BROKER=kafka:9092
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - POSTGRES_DB=appdb
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=adminpass
+      - POSTGRES_HOST=postgres
+
+  # Engine Service
+  engine:
+    build: ./engine
+    container_name: engine_service
+    depends_on:
+      - elasticsearch
+      - kafka
+      - postgres
+    ports:
+      - "5000:5000"
+    networks:
+      - app-network
+    environment:
+      - KAFKA_BROKER=kafka:9092
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - POSTGRES_DB=appdb
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=adminpass
+      - POSTGRES_HOST=postgres
+    volumes:
+      - ./engine/GeoLite2-ASN-Test.mmdb:/app/GeoLite2-ASN-Test.mmdb
+      - ./engine/GeoLite2-City.mmdb:/app/GeoLite2-City.mmdb
+
+  # Sniffer Service
+  sniffer:
+    build: ./sniffer
+    container_name: sniffer_service
+    depends_on:
+      - kafka
+    ports:
+      - "4000:4000"
+    networks:
+      - app-network
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    environment:
+      - KAFKA_BROKER=kafka:9092
+
+  # Kafka Broker
+  kafka:
+    image: confluentinc/cp-kafka:7.0.1
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - app-network
+
+  # Zookeeper (for Kafka)
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.0.1
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - app-network
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:14
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: adminpass
+    networks:
+      - app-network
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  # Elasticsearch
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.14.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    networks:
+      - app-network
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  es-data:
