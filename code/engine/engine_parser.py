@@ -107,8 +107,6 @@ def arp_scan(ip_range):
 
 def print_devices(devices):
     """ Print list of devices """
-    print("IP Address\t\tMAC Address")
-    print("-----------------------------------------")
     for device in devices:
         print(f"{device['ip']}\t\t{device['mac']}")
         
@@ -126,10 +124,8 @@ def parse_event(event):
     if event.get("source_type") == "packet":
         parsed_packet = {}
         dest_mac_addr, src_mac_addr, eth_proto, payload = ethernet_frame_parser(event["raw_data"])
-        print(eth_proto)
         if eth_proto == 8:  # IPv4
             version, header_length, ttl, proto, src_ip, dest_ip, data = unpack_ipv4_packet(payload)
-            print(version , header_length , ttl , proto )
             proto_data = unpack_proto(proto, data)
             parsed_packet["tenant"] = event.get("tenant")
             parsed_packet["source"] = event.get("source")
@@ -142,7 +138,7 @@ def parse_event(event):
             parsed_packet["dest_mac_addr"] = dest_mac_addr
             parsed_packet["src_ip_addr"] = src_ip
             parsed_packet["dest_ip_addr"] = dest_ip
-            parsed_packet["proto"] = proto
+            parsed_packet["protocol_number"] = proto
             parsed_packet["ttl"] = ttl
             parsed_packet["version"] = version
             parsed_packet["header_length"] = header_length

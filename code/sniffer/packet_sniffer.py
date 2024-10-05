@@ -55,7 +55,7 @@ def main_runner(interface):
     conn = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.ntohs(3))
     conn.bind((interface, 0))
 
-    # Kafka setup
+    # Kafka setupgit
     kafka_broker = os.environ.get("KAFKA_BROKER", "127.0.0.1:9092")
     kafka_topic = os.environ.get("KAFKA_TOPIC", "dev-events-topic")  # tenant-specific topic
     tenant_id = kafka_topic.split("-")[0]  # Extract tenant ID from topic

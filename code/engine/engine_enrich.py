@@ -13,7 +13,6 @@ def get_asn_and_geo(ip_address):
     # Get ASN information
     try:
         asn_response = asn_reader.asn(ip_address)
-        print(asn_response)
         asn = asn_response.autonomous_system_number
         asn_org = asn_response.autonomous_system_organization
     except geoip2.errors.AddressNotFoundError:
